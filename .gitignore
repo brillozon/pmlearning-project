@@ -1,0 +1,6 @@
+data
+project_cache
+problem_id*.txt
+.RData
+.Rhistory
+.Rproj.user

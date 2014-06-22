@@ -1,0 +1,116 @@
+---
+title: "Practical Machine Learning - Course Project"
+author: "Mike Martinez"
+date: "06/22/2014"
+output: html_document
+---
+
+This project creates a predictive model using training data from TBD which will be used to estimate the quality of exercise performed by individuals wearing accelerometers while performing barbell lifts.  A set of test data from the same source is used to measure the performance of the predictive model.  The results showed TBD accuracy, TBD TBD, and TBD specificity.
+
+## Obtaining the data
+
+The data is available from a CDN provided by the class.  In addition the original data source is located at http://groupware.les.inf.puc-rio.br/har.  We obtain and load the data for both the training and test data sets.
+
+```{r obtaindata,echo=TRUE,tidy=TRUE,cache=TRUE}
+dataDir <- './data'
+trainingUrl <- 'https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv'
+trainingFile <- paste(dataDir,'/','pml-training.csv',sep="")
+testingUrl <- 'https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv'
+testingFile <- paste(dataDir,'/','pml-testing.csv',sep="")
+
+if(!file.exists(dataDir)) {
+  dir.create(dataDir)
+}
+
+if(!file.exists(trainingFile)) {
+  download.file(trainingUrl, destfile = trainingFile, method = 'curl')
+  downloadTrainingDate <- date()
+}
+
+if(!file.exists(testingFile)) {
+  download.file(testingUrl, destfile = testingFile, method = 'curl')
+  downloadTestingDate <- date()
+}
+```
+
+We load the data and clean it up for processing by reading the file(s) and determining what the default type conversions would be.  We then modify the mis-converted data types from logical to numeric as needed.  We use the same type conversions for both the training and testing data sets.
+
+Assuming that the raw data will contain all of the information that processed data will, and the high correlation between raw and processed data, we subset the data for training and predications to use only the raw data and not the processed data.  Processsing in the data set includes averaging, standard deviation and variance, skewness and kurtosis.  While these descriptive statistics are of interest in understanding the data the information they contain remains in the raw data and can be utilized by the learning algorithms without the processing.  At least that is the assumption I will make for now.  If the predictive performance is not adequate, this data reduction may be revisited.
+
+I keep the username and date data to use in investigating for any systematic errors that may get introduced.
+
+```{r loadtraindata,echo=TRUE,tidy=TRUE,cache=TRUE}
+tdata1 <- read.table(trainingFile,sep=",",header=T,
+                           na.strings=c('NA','#DIV/0!'))
+
+coltypes <- lapply(tdata1,class)
+
+tdata2 <- within(tdata1,{
+  kurtosis_yaw_belt <- as.numeric(kurtosis_yaw_belt)
+  skewness_yaw_belt <- as.numeric(skewness_yaw_belt)
+  kurtosis_yaw_dumbbell <- as.numeric(kurtosis_yaw_dumbbell)
+  skewness_yaw_dumbbell <- as.numeric(skewness_yaw_dumbbell)
+  kurtosis_yaw_forearm <- as.numeric(kurtosis_yaw_forearm)
+  skewness_yaw_forearm <- as.numeric(skewness_yaw_forearm)
+})
+
+tdata3 <- data.frame(X=tdata2$X,
+                    classe=tdata2$classe,
+                    user_name=tdata2$user_name,
+                    cvtd_timestamp=tdata2$cvtd_timestamp,
+                    new_window=tdata2$new_window,
+                    num_window=tdata2$num_window)
+
+tdata3[ names(tdata2)[grep("^gyros",names(tdata2))]] = tdata2[ names(tdata2)[grep("^gyros",names(tdata2))]]
+
+tdata3[ names(tdata2)[grep("^accel",names(tdata2))]] = tdata2[ names(tdata2)[grep("^accel",names(tdata2))]]
+
+tdata3[ names(tdata2)[grep("^magnet",names(tdata2))]] = tdata2[ names(tdata2)[grep("^magnet",names(tdata2))]]
+
+trainonly = data.frame(tdata3[,c(2,7:42)])
+```
+
+```{r loadtestdata,echo=TRUE,tidy=TRUE,cache=TRUE}
+test1 <- read.table(testingFile,sep=",",header=T,
+                           na.strings=c('NA','#DIV/0!'))
+
+coltypes <- lapply(tdata1,class)
+
+test2 <- within(test1,{
+  kurtosis_yaw_belt <- as.numeric(kurtosis_yaw_belt)
+  skewness_yaw_belt <- as.numeric(skewness_yaw_belt)
+  kurtosis_yaw_dumbbell <- as.numeric(kurtosis_yaw_dumbbell)
+  skewness_yaw_dumbbell <- as.numeric(skewness_yaw_dumbbell)
+  kurtosis_yaw_forearm <- as.numeric(kurtosis_yaw_forearm)
+  skewness_yaw_forearm <- as.numeric(skewness_yaw_forearm)
+})
+
+test3 <- data.frame(X=test2$X,
+                    user_name=test2$user_name,
+                    cvtd_timestamp=test2$cvtd_timestamp,
+                    new_window=test2$new_window,
+                    num_window=test2$num_window)
+
+test3[ names(test2)[grep("^gyros",names(test2))]] = test2[ names(test2)[grep("^gyros",names(test2))]]
+
+test3[ names(test2)[grep("^accel",names(test2))]] = test2[ names(test2)[grep("^accel",names(test2))]]
+
+test3[ names(test2)[grep("^magnet",names(test2))]] = test2[ names(test2)[grep("^magnet",names(test2))]]
+
+testonly = data.frame(test3[,6:41])
+```
+
+We can train a classifier using Random Forest algorithm.  We can fit the *classe* variable as the response and all of the raw sensor outputs as the predictors.
+
+Due to time constraints, I limited the training to a random subset of 1,000 training samples.  Executing the full training over the 19,000+ rows in the training data would have put me past the submission deadline.  I will update this after the deadline with a more accurate model.
+
+```{r forest,echo=TRUE,cache=TRUE}
+library(caret)
+library(randomForest)
+set.seed(43672)
+fit <- train(classe~.,
+             data=data.frame(trainonly[sample(1:dim(trainonly)[1],1000),]),
+             method="rf")
+print(fit)
+```
+
