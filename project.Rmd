@@ -5,7 +5,7 @@ date: "06/22/2014"
 output: html_document
 ---
 
-This project creates a predictive model using training data from TBD which will be used to estimate the quality of exercise performed by individuals wearing accelerometers while performing barbell lifts.  A set of test data from the same source is used to measure the performance of the predictive model.  The results showed TBD accuracy, TBD TBD, and TBD specificity.
+This project creates a predictive model using training data from TBD which will be used to estimate the quality of exercise performed by individuals wearing accelerometers while performing barbell lifts.  A set of test data from the same source is used to measure the performance of the predictive model.  The results showed 81% accuracy using a reduced set of training data used due to time constraints.
 
 ## Obtaining the data
 
@@ -100,9 +100,11 @@ test3[ names(test2)[grep("^magnet",names(test2))]] = test2[ names(test2)[grep("^
 testonly = data.frame(test3[,6:41])
 ```
 
+## Creating a classification model
+
 We can train a classifier using Random Forest algorithm.  We can fit the *classe* variable as the response and all of the raw sensor outputs as the predictors.
 
-Due to time constraints, I limited the training to a random subset of 1,000 training samples.  Executing the full training over the 19,000+ rows in the training data would have put me past the submission deadline.  I will update this after the deadline with a more accurate model.
+Due to time constraints, I limited the training to a random subset of 1,000 training samples.  Executing the full training over the 19,000+ rows in the training data would have put me past the submission deadline.
 
 ```{r forest,echo=TRUE,cache=TRUE}
 library(caret)
@@ -112,5 +114,14 @@ fit <- train(classe~.,
              data=data.frame(trainonly[sample(1:dim(trainonly)[1],1000),]),
              method="rf")
 print(fit)
+```
+
+## Making predictions with the model
+
+Now we can make predictions using the generated model on the provided test data.  The resulting predictions are scored as correct on the project submittal website.
+
+```{r predictions,echo=TRUE,cache=TRUE}
+pred <- predict(fit,testonly)
+print(pred)
 ```
 

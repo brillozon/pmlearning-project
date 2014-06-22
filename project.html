@@ -60,7 +60,7 @@ if (window.hljs && document.readyState && document.readyState === "complete") {
 </div>
 
 
-<p>This project creates a predictive model using training data from TBD which will be used to estimate the quality of exercise performed by individuals wearing accelerometers while performing barbell lifts. A set of test data from the same source is used to measure the performance of the predictive model. The results showed TBD accuracy, TBD TBD, and TBD specificity.</p>
+<p>This project creates a predictive model using training data from TBD which will be used to estimate the quality of exercise performed by individuals wearing accelerometers while performing barbell lifts. A set of test data from the same source is used to measure the performance of the predictive model. The results showed 81% accuracy using a reduced set of training data used due to time constraints.</p>
 <div id="obtaining-the-data" class="section level2">
 <h2>Obtaining the data</h2>
 <p>The data is available from a CDN provided by the class. In addition the original data source is located at <a href="http://groupware.les.inf.puc-rio.br/har">http://groupware.les.inf.puc-rio.br/har</a>. We obtain and load the data for both the training and test data sets.</p>
@@ -141,8 +141,11 @@ test3[names(test2)[grep(&quot;^magnet&quot;, names(test2))]] = test2[names(test2
     names(test2))]]
 
 testonly = data.frame(test3[, 6:41])</code></pre>
+</div>
+<div id="creating-a-classification-model" class="section level2">
+<h2>Creating a classification model</h2>
 <p>We can train a classifier using Random Forest algorithm. We can fit the <em>classe</em> variable as the response and all of the raw sensor outputs as the predictors.</p>
-<p>Due to time constraints, I limited the training to a random subset of 1,000 training samples. Executing the full training over the 19,000+ rows in the training data would have put me past the submission deadline. I will update this after the deadline with a more accurate model.</p>
+<p>Due to time constraints, I limited the training to a random subset of 1,000 training samples. Executing the full training over the 19,000+ rows in the training data would have put me past the submission deadline.</p>
 <pre class="r"><code>library(caret)</code></pre>
 <pre><code>## Loading required package: lattice
 ## Loading required package: ggplot2</code></pre>
@@ -174,6 +177,14 @@ print(fit)</code></pre>
 ## 
 ## Accuracy was used to select the optimal model using  the largest value.
 ## The final value used for the model was mtry = 2.</code></pre>
+</div>
+<div id="making-predictions-with-the-model" class="section level2">
+<h2>Making predictions with the model</h2>
+<p>Now we can make predictions using the generated model on the provided test data. The resulting predictions are scored as correct on the project submittal website.</p>
+<pre class="r"><code>pred &lt;- predict(fit,testonly)
+print(pred)</code></pre>
+<pre><code>##  [1] B A C A A B D B A A A C B A E E A B B B
+## Levels: A B C D E</code></pre>
 </div>
 
 
